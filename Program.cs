@@ -27,8 +27,8 @@ namespace ReMount
         private string _indent = "\n";
         private Storage _storage = new Storage();
         private Mount _client;
-        private MountCreator _clientGenerator = new MountCreator();
-        private PartCreator _partCreator = new PartCreator();
+        private MountFactory _clientGenerator = new MountFactory();
+        private PartFactory _partCreator = new PartFactory();
 
         public void Init()
         {
@@ -239,10 +239,20 @@ namespace ReMount
         }
     }
 
+    class MountFactory
+    {
+        private List<ApplicationEnvironments> _applicationEnvironments = Enum.GetValues(typeof(ApplicationEnvironments)).Cast<ApplicationEnvironments>().ToList();
+
+        public Mount CreateRandomMount()
+        {
+            return new Mount(_applicationEnvironments[UserUtils.GetRandomPositiveNumber(_applicationEnvironments.Count)]);
+        }
+    }
+
     class Mount
     {
         private List<Part> _parts = new List<Part>();
-        private PartCreator _partCreator = new PartCreator();
+        private PartFactory _partCreator = new PartFactory();
         private List<MountParts> _possibleParts = Enum.GetValues(typeof(MountParts)).Cast<MountParts>().ToList();
 
         public Mount(ApplicationEnvironments travelEnvironment)
@@ -310,13 +320,29 @@ namespace ReMount
         }
     }
 
-    class MountCreator
+    class PartFactory
     {
+        private int _defectChance = 10;
+        private int _maxChance = 100;
+        private List<MountParts> _mountParts = Enum.GetValues(typeof(MountParts)).Cast<MountParts>().ToList();
         private List<ApplicationEnvironments> _applicationEnvironments = Enum.GetValues(typeof(ApplicationEnvironments)).Cast<ApplicationEnvironments>().ToList();
 
-        public Mount CreateRandomMount()
+        public Part CreateRandomPart()
         {
-            return new Mount(_applicationEnvironments[UserUtils.GetRandomPositiveNumber(_applicationEnvironments.Count)]);
+            return new Part(_applicationEnvironments[UserUtils.GetRandomPositiveNumber(_applicationEnvironments.Count)], _mountParts[UserUtils.GetRandomPositiveNumber(_mountParts.Count)], GeneratePrice(), UserUtils.GetRandomPositiveNumber(_maxChance) > _defectChance);
+        }
+
+        public Part CreatePart(ApplicationEnvironments applicationEnvironment, MountParts part)
+        {
+            return new Part(applicationEnvironment, part, GeneratePrice(), UserUtils.GetRandomPositiveNumber(_maxChance) > _defectChance);
+        }
+
+        private int GeneratePrice()
+        {
+            int minPrice = 100;
+            int maxPrice = 500;
+
+            return UserUtils.GetRandomNumber(minPrice, maxPrice);
         }
     }
 
@@ -346,42 +372,6 @@ namespace ReMount
 
             Console.WriteLine($"Среда применения - {ApplicationEnvironment}{separator}Часть маунта - {Belonging}{separator}");
         }
-    }
-
-    class PartCreator
-    {
-        private int _defectChance = 10;
-        private int _maxChance = 100;
-        private List<MountParts> _mountParts = Enum.GetValues(typeof(MountParts)).Cast<MountParts>().ToList();
-        private List<ApplicationEnvironments> _applicationEnvironments = Enum.GetValues(typeof(ApplicationEnvironments)).Cast<ApplicationEnvironments>().ToList();
-
-        public Part CreateRandomPart()
-        {
-            return new Part(_applicationEnvironments[UserUtils.GetRandomPositiveNumber(_applicationEnvironments.Count)], _mountParts[UserUtils.GetRandomPositiveNumber(_mountParts.Count)], GeneratePrice(), UserUtils.GetRandomPositiveNumber(_maxChance) > _defectChance);
-        }
-
-        public Part CreatePart(ApplicationEnvironments applicationEnvironment, MountParts part)
-        {
-            return new Part(applicationEnvironment, part, GeneratePrice(), UserUtils.GetRandomPositiveNumber(_maxChance) > _defectChance);
-        }
-
-        private int GeneratePrice()
-        {
-            int minPrice = 100;
-            int maxPrice = 500;
-
-            return UserUtils.GetRandomNumber(minPrice, maxPrice);
-        }
-    }
-
-    enum ApplicationEnvironments
-    {
-        [Description("Земля")]
-        Earth,
-        [Description("Вода")]
-        Water,
-        [Description("Воздух")]
-        Air
     }
 
     static class UserUtils
@@ -430,6 +420,16 @@ namespace ReMount
 
             return userInput;
         }
+    }
+
+    enum ApplicationEnvironments
+    {
+        [Description("Земля")]
+        Earth,
+        [Description("Вода")]
+        Water,
+        [Description("Воздух")]
+        Air
     }
 
     enum MountParts
